@@ -1,6 +1,48 @@
 import cv2
 import os
 import matplotlib.pyplot as plt
+
+
+def applyThreshold(image_input):
+    threshold_value = 110
+    image_input = cv2.resize(image_input, (50, 50))
+    thresh_image = cv2.threshold(image_input, threshold_value, 255.0, cv2.THRESH_BINARY)
+
+    return thresh_image
+
+
+def get_neighbours(limits, i, j, image_input):
+    ranges = []
+    neib = []
+    for c in range(-limits, limits + 1):
+        ranges.append(c)
+
+    try:
+        for r in ranges:
+            for k in ranges:
+                if 50 >= (i + r) >= 0 and 50 >= (j + k) >= 0:
+                    neib.append(image_input[i + r][j + k])
+    except Exception as e:
+        pass
+    return neib
+
+
+def removeSpots(limit, image_input):
+    for i in range(0, len(image_input)):
+        row = image_input[i]
+        for l in range(0, len(row)):
+            nei = get_neighbours(limit, i, l, image_input)
+            count_nei = 0
+            for r in nei:
+                if r == 255:
+                    count_nei += 1
+
+            if count_nei < 4:
+                image_input[i][l] = 0
+
+    return image_input
+
+
 # from PIL import Image
 # from skimage import io, color
 
@@ -31,6 +73,19 @@ try:
     plt.axis('off')
     plt.show()
 
+    threshhold_image = applyThreshold(gray_image_cv2)
+    cleaned_image = removeSpots(2, threshhold_image[1])
+    plt.figure(figsize=(50, 50))
+    plt.subplot(1, 2, 1)
+    plt.imshow(original_image_cv2[:, :, ::-1])  # OpenCV loads images in BGR format
+    plt.title('Original (OpenCV)')
+    plt.axis('off')
+    plt.subplot(1, 2, 2)
+    plt.imshow(cleaned_image, cmap='gray')
+    plt.title('Grayscale (OpenCV)')
+    plt.axis('off')
+    plt.show()
+
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
 
@@ -45,7 +100,6 @@ except OSError as e:
     print(f"OS Error: {e}")
 except Exception as e:
     print(f"An unexpected error occurred: {e}")
-
 
 # # Using Pillow(PIL)
 # original_image_pil = Image.open(original_image_path)
