@@ -16,8 +16,8 @@ from keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
 from keras.callbacks import TensorBoard
 # os.environ["CUDA_DEVICE_ORDER"] = 'PCI_BUS_ID'
 
-train_path = "C:/archi/train3/train"
-test_path = "C:/archi/train3/validate"
+train_path = "C:/archi/train4/train"
+test_path = "C:/archi/train4/test"
 
 
 def applyThreshhold(image):
