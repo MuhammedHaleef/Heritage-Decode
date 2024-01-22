@@ -1,28 +1,50 @@
 import cv2
-from PIL import Image
-from skimage import io, color
+import os
 import matplotlib.pyplot as plt
-
-# original image path
-original_image_path = 'C:\\Users\MuhammedHaleef\OneDrive\Documents\AI & DS\\2nd Year\CM2603 DSGP\Final Project\Heritage Decode\images\\raw\image.jpg'
-plt.figure(figsize=(50, 50))
+# from PIL import Image
+# from skimage import io, color
 
 
-# Using OpenCV
-original_image_cv2 = cv2.imread(original_image_path)
-# Converting to grayscale
-gray_image_cv2 = cv2.cvtColor(original_image_cv2, cv2.COLOR_BGR2GRAY)
+# specifying the input(original) image and converted image output paths
+original_image_path = os.path.join('..', 'images', 'raw', 'raw_image.jpg')
+output_directory = os.path.join('..', 'images', 'preprocessed')
 
-# plotting the original and converted image
-plt.subplot(1, 2, 1)
-plt.imshow(original_image_cv2[:, :, ::-1])  # OpenCV loads images in BGR format
-plt.title('Original (OpenCV)')
-plt.axis('off')
-plt.subplot(1, 2, 2)
-plt.imshow(gray_image_cv2, cmap='gray')
-plt.title('Grayscale (OpenCV)')
-plt.axis('off')
-plt.show()
+try:
+    # original_image_path = '../images/raw/raw_image.jpg'
+    if original_image_path is None:
+        raise FileNotFoundError(f"Image not found at path: {original_image_path}")
+
+    # Using OpenCV
+    original_image_cv2 = cv2.imread(original_image_path)
+    # Converting to grayscale
+    gray_image_cv2 = cv2.cvtColor(original_image_cv2, cv2.COLOR_BGR2GRAY)
+
+    # plotting the original and converted image
+    plt.figure(figsize=(50, 50))
+    plt.subplot(1, 2, 1)
+    plt.imshow(original_image_cv2[:, :, ::-1])  # OpenCV loads images in BGR format
+    plt.title('Original (OpenCV)')
+    plt.axis('off')
+    plt.subplot(1, 2, 2)
+    plt.imshow(gray_image_cv2, cmap='gray')
+    plt.title('Grayscale (OpenCV)')
+    plt.axis('off')
+    plt.show()
+
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+
+    output_image_path = os.path.join(output_directory, 'processed_image.jpg')
+    cv2.imwrite(output_image_path, gray_image_cv2)
+
+except FileNotFoundError as e:
+    print(f"Error: {e}")
+except cv2.error as e:
+    print(f"OpenCV Error: {e}")
+except OSError as e:
+    print(f"OS Error: {e}")
+except Exception as e:
+    print(f"An unexpected error occurred: {e}")
 
 
 # # Using Pillow(PIL)
@@ -60,7 +82,7 @@ plt.show()
 
 
 # def preprocess_image():
-#     input_image = cv2.imread("C:\\Users\MuhammedHaleef\OneDrive\Documents\AI & DS\\2nd Year\CM2603 DSGP\Final Project\Heritage Decode\images\\raw\image.jpg")
+#     input_image = cv2.imread("C:\\Users\MuhammedHaleef\OneDrive\Documents\AI & DS\\2nd Year\CM2603 DSGP\Final Project\Heritage Decode\images\\raw\raw_image.jpg")
 #
 #     # Grayscale conversion
 #     # cv2.imshow('Original', input_image)
@@ -80,7 +102,6 @@ plt.show()
 #     # enhanced_img = enhancer.enhance(2.0)
 #
 #     # Save the preprocessed image
-#     cv2.imwrite("C:\\Users\MuhammedHaleef\OneDrive\Documents\AI & DS\\2nd Year\CM2603 DSGP\Final Project\Heritage Decode\images\preprocessed\images.jpg", gray_image)
 #
 #
 # preprocess_image()
