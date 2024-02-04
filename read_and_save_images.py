@@ -53,59 +53,45 @@ def applyThreshold(image_input):
 
     return thresh_image
 
-def get_neighbours(image_input,i, l):
-    neighbours = []
-    sorounding = []
+def getneighbours1(limits, i , j,input,end):
+    ranges = []
+    neib = []
+    for c in range(-limits, limits + 1):
+        ranges.append(c)
+
     try:
-
-        neighbours.append(image_input[i - 1][l - 1])
-        neighbours.append(image_input[i - 1][l])
-        neighbours.append(image_input[i - 1][l + 1])
-        neighbours.append(image_input[i][l - 1])
-        neighbours.append(image_input[i][l + 1])
-        neighbours.append(image_input[i + 1][l - 1])
-        neighbours.append(image_input[i + 1][l])
-        neighbours.append(image_input[i + 1][l + 1])
-
-        sorounding.append(image_input[i - 2][l - 2])
-        sorounding.append(image_input[i - 2][l - 1])
-        sorounding.append(image_input[i - 2][l])
-        sorounding.append(image_input[i - 2][l - 1])
-        sorounding.append(image_input[i - 2][l + 2])
-        sorounding.append(image_input[i - 1][l - 2])
-        sorounding.append(image_input[i][l - 2])
-        sorounding.append(image_input[i + 1][l - 2])
-        sorounding.append(image_input[i + 2][l - 2])
-        sorounding.append(image_input[i + 2][l - 1])
-        sorounding.append(image_input[i + 2][l])
-        sorounding.append(image_input[i + 2][l + 1])
-        sorounding.append(image_input[i + 2][l + 2])
-        sorounding.append(image_input[i - 1][l + 2])
-        sorounding.append(image_input[i][l + 2])
-        sorounding.append(image_input[i + 1][l + 2])
-
+        for r in ranges:
+            for k in ranges:
+                if end>=(i+r)>=0 and end>=(j+k)>=0:
+                    neib.append(input[i+r][j+k])
     except Exception as e:
         pass
-    return neighbours, sorounding
+    return neib
+def clean(limit, input):
+    for i in range(0, len(input)):
+        row = input[i]
+        for l in range(0, len(row)):
+            nei = getneighbours1(limit, i, l,input,80)
+            spots=0
+            for r in nei:
+                if r==255.0:
+                    spots+=1
+            if spots<10:
+                input[i][l]=0
+    return input
 
 
-def removeSpots(image_input):
-
+def clean_large(image_input,limit,cuttOff):
     for i in range(0, len(image_input)):
         row = image_input[i]
         for l in range(0, len(row)):
-            nei, sur = get_neighbours(image_input,i, l)
-            count_nei = 0
-            count_ser = 0
+            nei = getneighbours1(limit, i, l,image_input,80)
+            spots=0
             for r in nei:
-                if r == 255:
-                    count_nei += 1
-            for k in sur:
-                if k == 255:
-                    count_ser += 1
-            if count_nei < 4 and count_ser < 5:
-                image_input[i][l] = 0
-
+                if r==255.0:
+                    spots+=1
+            if spots>cuttOff:
+                image_input[i][l]=0
     return image_input
 
 
@@ -148,12 +134,14 @@ for i in range(0, len(Categories1)):
     os.mkdir(test)
     for image in all_images[i][:lowest]:
         thresh = applyThreshold(image[0])
-        cleaned = removeSpots(thresh[1])
-        edges = findedges(cleaned)
+        cleaned = clean(2,thresh[1])
+        cleaned_1 = clean_large(cleaned, 20, 380)
+        edges = findedges(cleaned_1)
         cv2.imwrite(os.path.join(train_p, image[1]), edges)
 
     for image in all_images[i][lowest:]:
         thresh = applyThreshold(image[0])
-        cleaned = removeSpots(thresh[1])
-        edges = findedges(cleaned)
+        cleaned = clean(2,thresh[1])
+        cleaned_1 = clean_large(cleaned,20,380)
+        edges = findedges(cleaned_1)
         cv2.imwrite(os.path.join(test, image[1]), edges)
