@@ -68,5 +68,5 @@ num_epochs = 5
 optimizer = Adam(learning_rate=0.002)
 model_1.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"])
 model_1.fit(train_gen, validation_data=test_gen, epochs=num_epochs)
-model_1.save("C:/archi/models")
+model_1.save("C:/archi/models/model1.keras")
 # model_1.summary()
