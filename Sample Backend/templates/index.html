@@ -11,9 +11,9 @@
         <input type="file" name="file" accept="image/*">
         <button type="submit">Upload</button>
     </form>
-    {% if image %}
-        <h2>Uploaded Image</h2>
-        {{ image | safe }}
+    {% if major_color %}
+        <h2>Major Color</h2>
+        <p>The major color of the image is: {{ major_color }}</p>
     {% endif %}
 </body>
 </html>
