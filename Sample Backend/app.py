@@ -1,44 +1,34 @@
-from flask import Flask, request, jsonify
-from PIL import Image
-from collections import Counter
-import io
+from flask import Flask, request, render_template
+import base64
 
 app = Flask(__name__)
 
-def get_image_main_color(image):
-    # Open the image
-    image = Image.open(io.BytesIO(image))
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        # Check if the POST request has the file part
+        if 'file' not in request.files:
+            return 'No file part'
 
-    # Convert the image to RGB mode if it's not already in that mode
-    image = image.convert('RGB')
+        file = request.files['file']
 
-    # Get the colors from the image
-    colors = list(image.getdata())
+        # If the user does not select a file, the browser submits an empty file without a filename
+        if file.filename == '':
+            return 'No selected file'
 
-    # Count the occurrence of each color
-    color_counts = Counter(colors)
+        # If the file is selected and is an image
+        if file and allowed_file(file.filename):
+            # Read the image file and convert it to base64
+            image_base64 = base64.b64encode(file.read()).decode("utf-8")
+            # Construct HTML response with embedded image
+            html_content = f"<img src='data:image/jpeg;base64,{image_base64}' style='max-width: 100%;'>"
+            return render_template('index.html', image=html_content)
 
-    # Find the color with the highest count
-    main_color = max(color_counts, key=color_counts.get)
+    return render_template('index.html', image=None)
 
-    # Return the main color as a string
-    if main_color[0] > main_color[1] and main_color[0] > main_color[2]:
-        return "red"
-    elif main_color[1] > main_color[0] and main_color[1] > main_color[2]:
-        return "green"
-    else:
-        return "blue"  # Default to blue if no other condition is met
+def allowed_file(filename):
+    # Add any additional checks for allowed file types here
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg'}
 
-@app.route('/get_main_color', methods=['POST'])
-def get_main_color():
-    # Receive image data from request
-    image_data = request.files['image'].read()
-
-    # Get main color
-    main_color = get_image_main_color(image_data)
-
-    # Return main color as JSON response
-    return jsonify({"main_color": main_color})
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
