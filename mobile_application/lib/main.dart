@@ -1,279 +1,136 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:login_page_day_23/animation/FadeAnimation.dart';
+import 'package:login_page_day_23/types.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: LoadingPage(),
+  ));
 }
 
-class MyApp extends StatelessWidget {
+class LoadingPage extends StatefulWidget {
   @override
+  _LoadingPageState createState() => _LoadingPageState();
+}
+
+class _LoadingPageState extends State<LoadingPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(seconds: 5), () {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (context) => HomePage()));
+    });
+  }
+
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(
-        primaryColor: Colors.blueGrey, // Set primary color
-        hintColor: Colors.orangeAccent, // Set accent color
-        fontFamily: 'Roboto', // Set default font family
+    return Scaffold(
+      backgroundColor: Color.fromARGB(255, 43, 43, 44),
+      body: Center(
+        child: Image.asset("assets/cbl.gif"),
       ),
-      home: MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Heritage Decode',
-          style: TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.menu),
-          onPressed: () {},
-        ),
-        backgroundColor: Theme.of(context).primaryColor, // Use primary color
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Center(
-            child: Image.asset(
-              'assets/Logo.png',
-              height: 200.0, // Adjust image size
-              width: 200.0,
-            ),
-          ),
-          SizedBox(height: 20.0),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => SecondPage()),
-              );
-            },
-            child: Text(
-              'Get Start',
-              style: TextStyle(fontSize: 20.0),
-            ),
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class SecondPage extends StatefulWidget {
-  @override
-  _SecondPageState createState() => _SecondPageState();
-}
-
-class _SecondPageState extends State<SecondPage> {
-  File? _selectedImage;
-  bool _isProcessing = false;
-
-  Future<void> _getImageFromCamera() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.getImage(source: ImageSource.camera);
-
-    if (pickedFile != null) {
-      setState(() {
-        _isProcessing = true;
-      });
-
-      // Convert image to base64
-      List<int> imageBytes = await pickedFile.readAsBytes();
-      String base64Image = base64Encode(imageBytes);
-
-      // Send base64 image to backend
-      await _sendImageToBackend(base64Image);
-
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-        _isProcessing = false;
-      });
-    }
-  }
-
-  Future<void> _getImageFromFileChooser() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.getImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        _isProcessing = true;
-      });
-
-      // Convert image to base64
-      List<int> imageBytes = await pickedFile.readAsBytes();
-      String base64Image = base64Encode(imageBytes);
-
-      // Send base64 image to backend
-      await _sendImageToBackend(base64Image);
-
-      setState(() {
-        _selectedImage = File(pickedFile.path);
-        _isProcessing = false;
-      });
-    }
-  }
-
-  Future<void> _sendImageToBackend(String base64Image) async {
-    // Define your backend URL
-    String url = 'http://127.0.0.1:8000/upload';
-
-    // Send the base64 image to the backend
-    final response = await http.post(
-      Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'image': base64Image}),
-    );
-
-    if (response.statusCode == 200) {
-      // Image uploaded successfully
-      print('Image uploaded successfully');
-    } else {
-      // Error uploading image
-      print('Error uploading image: ${response.statusCode}');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Heritage Decode',
-          style: TextStyle(color: Colors.white),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        backgroundColor: Theme.of(context).primaryColor,
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Display message to select or capture image if no image is selected
-          if (_selectedImage == null)
-            Container(
-              padding: EdgeInsets.all(20.0),
-              decoration: BoxDecoration(
-                color: Colors.blueGrey.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Please select or capture an image to translate',
-                    style: TextStyle(fontSize: 20.0),
-                    textAlign: TextAlign.center,
+      backgroundColor: Color.fromARGB(255, 43, 43, 44),
+      body: SafeArea(
+        child: Container(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height,
+          padding: EdgeInsets.symmetric(horizontal: 30, vertical: 50),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: <Widget>[
+              Column(
+                children: <Widget>[
+                  FadeAnimation(
+                      1,
+                      Container(
+                        height: MediaQuery.of(context).size.height / 4,
+                        decoration: BoxDecoration(
+                            image: DecorationImage(
+                                image: AssetImage('assets/pic1.png'))),
+                      )),
+                  FadeAnimation(
+                      1.1,
+                      Text(
+                        "\n An app to correct your color vision Deficiency \n \n",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Color.fromARGB(255, 255, 255, 255),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15),
+                      )),
+                  FadeAnimation(
+                      1.2,
+                      Text(
+                        "Description",
+                        style: TextStyle(
+                            color: Color.fromARGB(255, 255, 255, 255),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20),
+                      )),
+                  SizedBox(
+                    height: 20,
                   ),
-                  SizedBox(height: 10.0),
-                  Icon(Icons.camera_alt, size: 50.0, color: Colors.blueGrey.withOpacity(0.6)),
+                  FadeAnimation(
+                      1.4,
+                      Text(
+                        "Our colour correction app brings a new dimension to your world, enhancing colour perception for those who are colour blind. Download now and see the world in a whole new light ",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[700], fontSize: 15),
+                      )),
                 ],
               ),
-            ),
-          if (_selectedImage != null)
-            Center(
-              child: Image.file(
-                _selectedImage!,
-                height: 300.0,
-                width: 300.0,
-              ),
-            ),
-          SizedBox(height: 20.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              IconButton(
-                icon: Icon(Icons.camera),
-                onPressed: _isProcessing ? null : () async {
-                  await _getImageFromCamera();
-                },
-              ),
-              IconButton(
-                icon: Icon(Icons.file_upload),
-                onPressed: _isProcessing ? null : () async {
-                  await _getImageFromFileChooser();
-                },
-              ),
+              Column(
+                children: <Widget>[
+                  SizedBox(
+                    height: 20,
+                  ),
+                  FadeAnimation(
+                      1.6,
+                      Container(
+                        padding: EdgeInsets.only(top: 3, left: 3),
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(50),
+                            border: Border(
+                              bottom: BorderSide(color: Colors.black),
+                              top: BorderSide(color: Colors.black),
+                              left: BorderSide(color: Colors.black),
+                              right: BorderSide(color: Colors.black),
+                            )),
+                        child: MaterialButton(
+                          minWidth: double.infinity,
+                          height: 60,
+                          onPressed: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => TypePage()));
+                          },
+                          color: Color.fromARGB(255, 217, 217, 217),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50)),
+                          child: Text(
+                            "Start",
+                            style: TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 18),
+                          ),
+                        ),
+                      ))
+                ],
+              )
             ],
           ),
-          SizedBox(height: 20.0),
-          if (_selectedImage != null)
-            ElevatedButton(
-              onPressed: _isProcessing ? null : () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ThirdPage(image: _selectedImage!),
-                  ),
-                );
-              },
-              child: Text('Convert'),
-            ),
-          if (_isProcessing)
-            CircularProgressIndicator(), // Show loading indicator while processing
-        ],
-      ),
-    );
-  }
-}
-
-class ThirdPage extends StatelessWidget {
-  final File image;
-
-  ThirdPage({required this.image});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Heritage Decode',
-          style: TextStyle(color: Colors.white),
         ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        backgroundColor: Theme.of(context).primaryColor,
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(height: 40.0),
-          Center(
-            child: Image.file(
-              image,
-              height: 300.0,
-              width: 300.0,
-            ),
-          ),
-          SizedBox(height: 20.0),
-          Text(
-            'Translated Text From The Image',
-            style: TextStyle(fontSize: 24.0),
-          ),
-          SizedBox(height: 40.0),
-        ],
       ),
     );
   }
