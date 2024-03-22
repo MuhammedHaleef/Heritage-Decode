@@ -186,7 +186,7 @@ patched_prediction = np.array(patched_prediction)
 patched_prediction = np.reshape(patched_prediction, [patches_img.shape[0], patches_img.shape[1],
                                                      patches_img.shape[2], patches_img.shape[3]])
 
-unpatched_prediction = unpatchify(patched_prediction, (large_img.shape[0], large_img.shape[1]))
+unpatched_prediction = unpatchify(patched_prediction, (large_img.shape[0], large_img.shape[1]))#this is the final prediction with labels as the pixels
 
 unique = np.unique(unpatched_prediction)
 unique_num=[]
