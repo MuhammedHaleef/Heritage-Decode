@@ -24,7 +24,7 @@ def translate():
 # testing the server
 @app.route('/test')
 def testing():
-    print("Heritage Decode Backend Sever is working")
+    return("Heritage Decode Backend Sever is working")
 
 
 # prediction adn translating 
@@ -43,7 +43,7 @@ def upload_and_translate():
         processed_image = preprocess(temp_image_path)
         
     
-        prediction = model.predict(processed_image)
+        #prediction = model.predict(processed_image)
         # call the lakindu's translating function and checking with the database
 
         translated_text = " "
