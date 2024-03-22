@@ -1,14 +1,24 @@
+import copy
 import os.path
 import random
 import math
+import types
+
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 from keras.src.preprocessing.image import ImageDataGenerator
+from skimage.transform import probabilistic_hough_line
+from skimage.feature import canny
+from skimage import io, color, feature, draw
 
-Categories1 = ["g", "k", "m", "sh"]
+
+import preprocess
+
+Categories1 = ["g", "y", "m", "sh"]
 base_path = "C:/archi/train2"
 train = "C:/archi/train3/train"
-validate = "C:/archi/train3/validate"
+# validate = "C:/archi/train3/validate"
 
 dataGen = ImageDataGenerator(rotation_range=15, width_shift_range=0.05,
                              height_shift_range=0.05
@@ -18,12 +28,14 @@ source = "C:/archi/training"
 destination = "C:/archi/train4"
 
 train_path = os.path.join(destination, "train")
+validation_path = os.path.join(destination, "validation")
 test_path = os.path.join(destination, "test")
-
 os.mkdir(train_path)
+os.mkdir(validation_path)
 os.mkdir(test_path)
 generated = os.path.join(destination, "generated")
 os.mkdir(generated)
+
 
 def findedges(image_input):
     pass
@@ -53,7 +65,8 @@ def applyThreshold(image_input):
 
     return thresh_image
 
-def getneighbours1(limits, i , j,input,end):
+
+def getneighbours1(limits, i, j, input, end):
     ranges = []
     neib = []
     for c in range(-limits, limits + 1):
@@ -62,36 +75,39 @@ def getneighbours1(limits, i , j,input,end):
     try:
         for r in ranges:
             for k in ranges:
-                if end>=(i+r)>=0 and end>=(j+k)>=0:
-                    neib.append(input[i+r][j+k])
+                if end >= (i + r) >= 0 and end >= (j + k) >= 0:
+                    neib.append(input[i + r][j + k])
     except Exception as e:
         pass
     return neib
-def clean(limit, input):
+
+
+def clean(limit, input, cut_off):
+    m = copy.copy(input)
     for i in range(0, len(input)):
         row = input[i]
         for l in range(0, len(row)):
-            nei = getneighbours1(limit, i, l,input,80)
-            spots=0
+            nei = getneighbours1(limit, i, l, input, 80)
+            spots = 0
             for r in nei:
-                if r==255.0:
-                    spots+=1
-            if spots<10:
-                input[i][l]=0
+                if r == 255:
+                    spots += 1
+            if spots < cut_off:
+                input[i][l] = 0
     return input
 
 
-def clean_large(image_input,limit,cuttOff):
+def clean_large(image_input, limit, cuttOff):
     for i in range(0, len(image_input)):
         row = image_input[i]
         for l in range(0, len(row)):
-            nei = getneighbours1(limit, i, l,image_input,80)
-            spots=0
+            nei = getneighbours1(limit, i, l, image_input, 80)
+            spots = 0
             for r in nei:
-                if r==255.0:
-                    spots+=1
-            if spots>cuttOff:
-                image_input[i][l]=0
+                if r == 255.0:
+                    spots += 1
+            if spots < cuttOff:
+                image_input[i][l] = 0
     return image_input
 
 
@@ -124,24 +140,43 @@ for cat in Categories1:
     random.shuffle(images)
     all_images.append(images)
 
-lowest = int(min(nums) * 3 / 4)
+lowest = int(min(nums) * 7 / 10)
+next = int(min(nums) * 9 / 10)
 
 for i in range(0, len(Categories1)):
+
+    print(len(all_images[i][:lowest]))
+    print(len(all_images[i][lowest:next]))
+    print(len(all_images[i][next:]))
     cat = Categories1[i]
     train_p = os.path.join(train_path, cat)
-    test = os.path.join(test_path, cat)
+    validation_p = os.path.join(validation_path, cat)
+    test_p = os.path.join(test_path, cat)
     os.mkdir(train_p)
-    os.mkdir(test)
-    for image in all_images[i][:lowest]:
-        thresh = applyThreshold(image[0])
-        cleaned = clean(2,thresh[1])
-        cleaned_1 = clean_large(cleaned, 20, 380)
-        edges = findedges(cleaned_1)
-        cv2.imwrite(os.path.join(train_p, image[1]), edges)
+    os.mkdir(test_p)
+    os.mkdir(validation_p)
 
-    for image in all_images[i][lowest:]:
-        thresh = applyThreshold(image[0])
-        cleaned = clean(2,thresh[1])
-        cleaned_1 = clean_large(cleaned,20,380)
-        edges = findedges(cleaned_1)
-        cv2.imwrite(os.path.join(test, image[1]), edges)
+    for image in all_images[i][:lowest]:
+        thresh = applyThreshold(image[0])[1]
+        t=image[0]
+        cleaned = clean(1, thresh, 4)
+        cleaned1 = clean_large(cleaned, 2, 3)
+        normalize = preprocess.normalize(image[0])
+        p=os.path.join(train_p, image[1])
+        # l=cleaned1.astype(np.uint8)
+        cv2.imwrite(p,normalize)
+        k= cv2.imread(p,cv2.IMREAD_GRAYSCALE)
+
+    for image in all_images[i][lowest:next]:
+        thresh = applyThreshold(image[0])[1]
+        cleaned = clean(1, thresh, 4)
+        cleaned1 = clean_large(cleaned, 2, 3)
+        normalize = preprocess.normalize(image[0])
+        cv2.imwrite(os.path.join(validation_p, image[1]), normalize)
+
+    for image in all_images[i][next:min(nums)]:
+        thresh = applyThreshold(image[0])[1]
+        cleaned = clean(1, thresh, 4)
+        cleaned1 = clean_large(cleaned, 2, 3)
+        normalize = preprocess.normalize(image[0])
+        cv2.imwrite(os.path.join(test_p,image[1]), normalize)
