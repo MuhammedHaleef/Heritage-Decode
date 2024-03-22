@@ -3,7 +3,9 @@ import base64
 
 app = Flask(__name__)
 
-
+@app.route("/")
+def index():
+    return "testing heritage decode backend server"
 @app.route('/upload', methods=['POST'])
 def upload():
     if 'image' not in request.form:
@@ -19,4 +21,5 @@ def upload():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=8000)  # Change the port to 8000 or any other available port
+
