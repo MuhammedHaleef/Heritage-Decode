@@ -188,7 +188,7 @@ patched_prediction = np.reshape(patched_prediction, [patches_img.shape[0], patch
 
 unpatched_prediction = unpatchify(patched_prediction, (large_img.shape[0], large_img.shape[1]))
 
-unique = np.unique(unpatched_prediction)
+unique = np.unique(unpatched_prediction)#final prediction
 unique_num=[]
 for each in unique:
     width = len(unpatched_prediction[0])
