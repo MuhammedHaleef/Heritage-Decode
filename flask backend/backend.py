@@ -1,126 +1,96 @@
 import os
-from flask import Flask, request, jsonify
 import numpy as np
 import cv2
 from PIL import Image
 from keras.models import load_model
 from patchify import patchify, unpatchify
-print('Work1')
 from sklearn.preprocessing import MinMaxScaler
 
-
-
-
-
-#print('Work5')
-#print('Work6')
-#print('Work7')
-
-
-
-app = Flask(__name__)
+print('Work1')
 
 # Load the model 
 try:
-    model = load_model('E:/2nd year/Heritage Decode/flask backend/model_epoch80.keras', compile = False)
+    model = load_model('E:/2nd year/Heritage Decode/flask backend/model_epoch80.keras', compile=False)
     print('Model loaded successfully')
 except Exception as e:
     print(f'Error loading the model: {e}')
+
 patch_size = 128
 print('Work3')
 
 # Min Max Scaler
-
-scaler  = MinMaxScaler()
+scaler = MinMaxScaler()
 print('Work4')
 
-
-
 # Do the preprocess part when image came to backend
-def preprocess():
+def preprocess(image_path):
+    # Read image using OpenCV
+    image = cv2.imread(image_path)
+    # Convert image to RGB (OpenCV uses BGR)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    # Perform any additional preprocessing here
     print("Do the preprocess here")
-
-
+    return image
 
 # Translating from the database (Lakindu's part)
-def translate():
+def translate(processed_image):
+    # Implement Lakindu's translation function here
     print("Lakindu's part here")
 
+# prediction and translating 
+def upload_and_translate(image_file):
+    temp_image_path = 'temp_image.jpg'
+    image_file.save(temp_image_path)
 
-# testing the server
-@app.route('/test')
-def testing():
-    return("Heritage Decode Backend Sever is working")
+    processed_image = preprocess(temp_image_path)
 
+    SIZE_X = (processed_image.shape[1]//patch_size)*patch_size
+    SIZE_Y = (processed_image.shape[0]//patch_size)*patch_size
+    large_img = Image.fromarray(processed_image)
+    large_img = large_img.crop((0, 0, SIZE_X, SIZE_Y))
+    large_img = np.array(large_img)
 
-# prediction adn translating 
-@app.route('/upload_and_translate', methods=['POST'])
-def upload_and_translate():
-    if request.method == 'POST':
-        if 'image' not in request.files:
-            return jsonify({'error': 'No image file found'}), 400
-        image_file = request.files['image']
-        
-        
-    
-        temp_image_path = 'temp_image.jpg'
-        image_file.save(temp_image_path)
+    patches_img = patchify(large_img, (patch_size, patch_size, 3), step=patch_size)
+    patches_img = patches_img[:,:,0,:,:,:]
+    patched_prediction = []
 
-        processed_image = preprocess(temp_image_path)
-        
-    
-        #prediction = model.predict(processed_image)
-        # call the lakindu's translating function and checking with the database
-        
-        SIZE_X = (processed_image.shape[1]//patch_size)*patch_size #Nearest size divisible by our patch size
-        SIZE_Y = (processed_image.shape[0]//patch_size)*patch_size #Nearest size divisible by our patch size
-        large_img = Image.fromarray(processed_image)
-        large_img = large_img.crop((0 ,0, SIZE_X, SIZE_Y))  #Crop from top left corner
-    #image = image.resize((SIZE_X, SIZE_Y))  #Try not to resize for semantic segmentation
-        large_img = np.array(large_img)
+    for i in range(patches_img.shape[0]):
+        for j in range(patches_img.shape[1]):
+            single_patch_img = patches_img[i, j, :, :, :]
+            single_patch_img = scaler.fit_transform(single_patch_img.reshape(-1, single_patch_img.shape[-1])).reshape(
+                single_patch_img.shape)
+            single_patch_img = np.expand_dims(single_patch_img, axis=0)
+            pred = model.predict(single_patch_img)
+            pred = np.argmax(pred, axis=3)
+            pred = pred[0, :, :]
+            patched_prediction.append(pred)
 
-        patches_img = patchify(large_img, (patch_size, patch_size, 3), step=patch_size)  #Step=256 for 256 patches means no overlap
-        patches_img = patches_img[:,:,0,:,:,:]
-        patched_prediction = []
-        for i in range(patches_img.shape[0]):
-            for j in range(patches_img.shape[1]):
-                single_patch_img = patches_img[i, j, :, :, :]
+    patched_prediction = np.array(patched_prediction)
+    print(patched_prediction.shape)
+    print(patches_img.shape)
+    patched_prediction = np.reshape(patched_prediction, [patches_img.shape[0], patches_img.shape[1],
+                                                 patches_img.shape[2], patches_img.shape[3]])
 
-        # Use minmaxscaler instead of just dividing by 255.
-                single_patch_img = scaler.fit_transform(single_patch_img.reshape(-1, single_patch_img.shape[-1])).reshape(
-                    single_patch_img.shape)
-                single_patch_img = np.expand_dims(single_patch_img, axis=0)
-                pred = model.predict(single_patch_img)
-                pred = np.argmax(pred, axis=3)
-                pred = pred[0, :, :]
+    unpatched_prediction = unpatchify(patched_prediction, (large_img.shape[0], large_img.shape[1]))
+    for i in unpatched_prediction:
+        print(i)
+    translated_text = " "
+    segmented_image = []
 
-                patched_prediction.append(pred)
+    os.remove(temp_image_path)
 
-        patched_prediction = np.array(patched_prediction)
-        print(patched_prediction.shape)
-        print(patches_img.shape)
-        patched_prediction = np.reshape(patched_prediction, [patches_img.shape[0], patches_img.shape[1],
-                                                     patches_img.shape[2], patches_img.shape[3]])
-
-        unpatched_prediction = unpatchify(patched_prediction, (large_img.shape[0], large_img.shape[1]))
-        translated_text = " "
-        segmented_image = []
-
-        # After that show the original image, segmanted image and the translated text here
-
-        os.remove(temp_image_path)
-
-        return jsonify({
-                   "Translated Text":translated_text,
-                    "Segmented Image":segmented_image
-                       })
-
-        
-
-
-
-
-
+    return {
+        "Translated Text": translated_text,
+        "Segmented Image": segmented_image
+    }
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',debug=True)  
+    # For testing the function
+    # Pass a mock file object, as the function expects a file-like object
+    class MockFile:
+        def save(self, path):
+            pass
+
+    mock_file = MockFile()
+    result = upload_and_translate(mock_file)
+    print(result)
