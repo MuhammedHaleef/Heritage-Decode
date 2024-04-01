@@ -2,11 +2,37 @@ import os
 from flask import Flask, request, jsonify
 import numpy as np
 import cv2
+from PIL import Image
+from keras.models import load_model
+from patchify import patchify, unpatchify
+print('Work1')
+from sklearn.preprocessing import MinMaxScaler
+
+
+
+
+
+#print('Work5')
+#print('Work6')
+#print('Work7')
+
+
 
 app = Flask(__name__)
 
 # Load the model 
-# model = tf.keras.models.load_model('wdwdwdwdwdwdwdwdwdwdwdwwdwdwd')
+try:
+    model = load_model('E:/2nd year/Heritage Decode/flask backend/model_epoch80.keras', compile = False)
+    print('Model loaded successfully')
+except Exception as e:
+    print(f'Error loading the model: {e}')
+patch_size = 128
+print('Work3')
+
+# Min Max Scaler
+
+scaler  = MinMaxScaler()
+print('Work4')
 
 
 
@@ -45,6 +71,7 @@ def upload_and_translate():
     
         #prediction = model.predict(processed_image)
         # call the lakindu's translating function and checking with the database
+        
         SIZE_X = (processed_image.shape[1]//patch_size)*patch_size #Nearest size divisible by our patch size
         SIZE_Y = (processed_image.shape[0]//patch_size)*patch_size #Nearest size divisible by our patch size
         large_img = Image.fromarray(processed_image)

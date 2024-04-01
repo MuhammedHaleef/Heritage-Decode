@@ -1,0 +1,1 @@
+ E:\\2nd\ year\\Heritage\ Decode\\Complete\ UI\\.dart_tool\\flutter_build\\3a0ad3065e79f4dde1ea9345baf328f8\\native_assets.yaml: 
