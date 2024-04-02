@@ -405,7 +405,11 @@ def convert_indices_to_chars(input_list):
     # Iterate through each sublist in the input list
     for sublist in input_list:
         # Map each index in the sublist to its corresponding character
-        chars = [label_to_char.get(index, 'Unknown') for index in sublist]
+        chars = [label_to_char.get(index) for index in sublist]
+        if chars == 'ru2':
+            chars = 'ru'
+        if chars == 'm2':
+            chars = 'm'
         # Append the list of characters to the output list
         output_list.append(chars)
 
@@ -418,6 +422,7 @@ output_list = convert_indices_to_chars(selected_values)
 
 # Use itertools.product() to generate all combinations
 combinations = list(product(*output_list))
+
 
 # Print the combinations
 for combination in combinations:
