@@ -1,4 +1,5 @@
 import os
+from flask import Flask, request, jsonify
 import numpy as np
 import cv2
 from PIL import Image
@@ -9,7 +10,13 @@ from matplotlib import pyplot as plt
 from collections import Counter
 from itertools import product
 
-print('Work1')
+
+app = Flask(__name__)
+
+#Testing the sever
+@app.route('/test')
+def test():
+    return ('Heritage Decode is working')
 
 # Load the model 
 try:
@@ -254,66 +261,70 @@ def to_letter(unpatched_prediction):
             # Use itertools.product() to generate all combinations
             combinations = list(product(*output_list))
         return combinations
-# prediction and translating 
-def upload_and_translate(image_file):
-    temp_image_path = 'temp_image.jpg'
-    image_file.save(temp_image_path)
+# prediction and translating
+@app.route('/upload_and_predict', methods=['POST']) 
+def upload_and_predict():
+    if request.method == 'POST':
+        if 'image' not in request.files:
+            return jsonify({'error': 'No image file found'}), 400   
+        image_file = request.files['image'] 
+        temp_image_path = 'temp_image.jpg'
+        image_file.save(temp_image_path)
 
-    processed_image = preprocess(temp_image_path)
+        processed_image = preprocess(temp_image_path)
 
-    SIZE_X = (processed_image.shape[1]//patch_size)*patch_size
-    SIZE_Y = (processed_image.shape[0]//patch_size)*patch_size
-    large_img = Image.fromarray(processed_image)
-    large_img = large_img.crop((0, 0, SIZE_X, SIZE_Y))
-    large_img = np.array(large_img)
+        SIZE_X = (processed_image.shape[1]//patch_size)*patch_size
+        SIZE_Y = (processed_image.shape[0]//patch_size)*patch_size
+        large_img = Image.fromarray(processed_image)
+        large_img = large_img.crop((0, 0, SIZE_X, SIZE_Y))
+        large_img = np.array(large_img)
 
-    patches_img = patchify(large_img, (patch_size, patch_size, 3), step=patch_size)
-    patches_img = patches_img[:,:,0,:,:,:]
-    patched_prediction = []
+        patches_img = patchify(large_img, (patch_size, patch_size, 3), step=patch_size)
+        patches_img = patches_img[:,:,0,:,:,:]
+        patched_prediction = []
 
-    for i in range(patches_img.shape[0]):
-        for j in range(patches_img.shape[1]):
-            single_patch_img = patches_img[i, j, :, :, :]
-            single_patch_img = scaler.fit_transform(single_patch_img.reshape(-1, single_patch_img.shape[-1])).reshape(
-                single_patch_img.shape)
-            single_patch_img = np.expand_dims(single_patch_img, axis=0)
-            pred = model.predict(single_patch_img)
-            pred = np.argmax(pred, axis=3)
-            pred = pred[0, :, :]
-            patched_prediction.append(pred)
+        for i in range(patches_img.shape[0]):
+            for j in range(patches_img.shape[1]):
+                single_patch_img = patches_img[i, j, :, :, :]
+                single_patch_img = scaler.fit_transform(single_patch_img.reshape(-1, single_patch_img.shape[-1])).reshape(
+                    single_patch_img.shape)
+                single_patch_img = np.expand_dims(single_patch_img, axis=0)
+                pred = model.predict(single_patch_img)
+                pred = np.argmax(pred, axis=3)
+                pred = pred[0, :, :]
+                patched_prediction.append(pred)
 
-    patched_prediction = np.array(patched_prediction)
-    print(patched_prediction.shape)
-    print(patches_img.shape)
-    patched_prediction = np.reshape(patched_prediction, [patches_img.shape[0], patches_img.shape[1],
+        patched_prediction = np.array(patched_prediction)
+        print(patched_prediction.shape)
+        print(patches_img.shape)
+        patched_prediction = np.reshape(patched_prediction, [patches_img.shape[0], patches_img.shape[1],
                                                  patches_img.shape[2], patches_img.shape[3]])
 
-    unpatched_prediction = unpatchify(patched_prediction, (large_img.shape[0], large_img.shape[1]))
-    with_RGB = label_to_rgb(unpatched_prediction)
-    letters = to_letter(unpatched_prediction)
-    plt.imshow(with_RGB)
-    plt.show()
-    #print(segmented_image)
-    for i in unpatched_prediction:
-        print(i)
-    translated_text = " "
-    segmented_image = []
+        unpatched_prediction = unpatchify(patched_prediction, (large_img.shape[0], large_img.shape[1]))
+        with_RGB = label_to_rgb(unpatched_prediction)
+        letters = to_letter(unpatched_prediction)
+        letter1= letters[0]
+        letter_string=''
+        for each in letter1:
+            letter_string = letter_string+each
+        #plt.imshow(with_RGB)
+        #plt.show()
+        #print(segmented_image)
+        for i in unpatched_prediction:
+            print(i)
+        translated_text = " "
+        segmented_image = []
     
-    print(letters)
-    os.remove(temp_image_path)
+        print(letters)
+    
+        os.remove(temp_image_path)
+        return jsonify({'predicted_class': letter_string})
 
-    return {
-        "Translated Text": translated_text,
-        "Segmented Image": unpatched_prediction
-    }
+        #return {
+        #    "Translated Text": translated_text,
+        #    "Segmented Image": unpatched_prediction
+        #}
 
 if __name__ == '__main__':
-    # For testing the function
+    app.run(host='0.0.0.0', debug=True)
     # Pass a mock file object, as the function expects a file-like object
-    class MockFile:
-        def save(self, path):
-            pass
-
-    mock_file = MockFile()
-    result = upload_and_translate(mock_file)
-    print(result)
