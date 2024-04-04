@@ -1,2 +1,1 @@
-# Heritage-Decode
-Sri Lankan stone inscription reading, and translating mobile application.
+# Image-Processing-in-Machine-Learning
