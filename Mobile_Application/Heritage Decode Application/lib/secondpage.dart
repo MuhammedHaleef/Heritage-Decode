@@ -55,7 +55,7 @@ class _SecondPageState extends State<SecondPage> {
           ),
           // Background Container with Opacity
           Container(
-            color: const Color.fromARGB(255, 90, 80, 80).withOpacity(0.5),
+            color: const Color.fromARGB(255, 90, 80, 80).withOpacity(0.7),
             width: double.infinity,
             height: double.infinity,
           ),
@@ -121,7 +121,8 @@ class _SecondPageState extends State<SecondPage> {
       var request = http.MultipartRequest(
           'POST',
           Uri.parse(
-              'http://192.168.43.76:5000/upload_and_predict'));
+              'http://192.168.1.101:5000/upload_and_predict'));
+              
 
       request.files.add(await http.MultipartFile.fromPath(
           'image', _selectedImage!.path));
