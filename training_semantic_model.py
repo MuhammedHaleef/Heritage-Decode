@@ -1,10 +1,11 @@
-
 import os
 import cv2
 import datetime as datetime
 
+import epochs
 import keras.callbacks
 import numpy as np
+import saver
 
 from matplotlib import pyplot as plt
 from patchify import patchify
@@ -19,7 +20,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 scaler = MinMaxScaler()
 
-root_directory = 'C:/archi/real_segmented\inverted'
+root_directory = "C:/Users\MuhammedHaleef\OneDrive\Documents\AI & DS/2nd Year\CM2603 DSGP\Final Project\Labelling Dataset\Model_training"
 
 patch_size = 128
 
@@ -125,6 +126,9 @@ ru = np.array(tuple(int(ru[i:i + 2], 16) for i in (0, 2, 4)))
 m = '#5e5c80'.lstrip('#')
 m = np.array(tuple(int(m[i:i + 2], 16) for i in (0, 2, 4)))
 
+m2 = '#8c89ce'.lstrip('#')
+m2 = np.array(tuple(int(m2[i:i + 2], 16) for i in (0, 2, 4)))
+
 k = '#8c4747'.lstrip('#')
 k = np.array(tuple(int(k[i:i + 2], 16) for i in (0, 2, 4)))
 
@@ -152,11 +156,11 @@ le = np.array(tuple(int(le[i:i + 2], 16) for i in (0, 2, 4)))
 Nhe = '#6e6c93'.lstrip('#')
 Nhe = np.array(tuple(int(Nhe[i:i + 2], 16) for i in (0, 2, 4)))
 
-ch = '#3b8b9c'.lstrip('#')
-ch = np.array(tuple(int(ch[i:i + 2], 16) for i in (0, 2, 4)))
+# ch = '#3b8b9c'.lstrip('#')
+# ch = np.array(tuple(int(ch[i:i + 2], 16) for i in (0, 2, 4)))
 
-thu = '#14593b'.lstrip('#')
-thu = np.array(tuple(int(thu[i:i + 2], 16) for i in (0, 2, 4)))
+# thu = '#14593b'.lstrip('#')
+# thu = np.array(tuple(int(thu[i:i + 2], 16) for i in (0, 2, 4)))
 
 b = '#fe8100'.lstrip('#')
 b = np.array(tuple(int(b[i:i + 2], 16) for i in (0, 2, 4)))
@@ -179,14 +183,14 @@ ki = np.array(tuple(int(ki[i:i + 2], 16) for i in (0, 2, 4)))
 kadhi = '#835812'.lstrip('#')
 kadhi = np.array(tuple(int(kadhi[i:i + 2], 16) for i in (0, 2, 4)))
 
-vi = '#005c86'.lstrip('#')
-vi = np.array(tuple(int(vi[i:i + 2], 16) for i in (0, 2, 4)))
+# vi = '#005c86'.lstrip('#')
+# vi = np.array(tuple(int(vi[i:i + 2], 16) for i in (0, 2, 4)))
 
 g = '#517885'.lstrip('#')
 g = np.array(tuple(int(g[i:i + 2], 16) for i in (0, 2, 4)))
 
-thi = '#898989'.lstrip('#')
-thi = np.array(tuple(int(thi[i:i + 2], 16) for i in (0, 2, 4)))
+# thi = '#898989'.lstrip('#')
+# thi = np.array(tuple(int(thi[i:i + 2], 16) for i in (0, 2, 4)))
 
 n = '#6d0000'.lstrip('#')
 n = np.array(tuple(int(n[i:i + 2], 16) for i in (0, 2, 4)))
@@ -194,8 +198,8 @@ n = np.array(tuple(int(n[i:i + 2], 16) for i in (0, 2, 4)))
 a = '#718693'.lstrip('#')
 a = np.array(tuple(int(a[i:i + 2], 16) for i in (0, 2, 4)))
 
-dhi = '#05ff92'.lstrip('#')
-dhi = np.array(tuple(int(dhi[i:i + 2], 16) for i in (0, 2, 4)))
+# dhi = '#05ff92'.lstrip('#')
+# dhi = np.array(tuple(int(dhi[i:i + 2], 16) for i in (0, 2, 4)))
 
 rock = '#3b4139'.lstrip("#")
 rock = np.array(tuple(int(rock[i:i + 2], 16) for i in (0, 2, 4)))
@@ -225,21 +229,22 @@ def rgb_to_2D_label(label):
     label_seg[np.all(label == h, axis=-1)] = 13
     label_seg[np.all(label == le, axis=-1)] = 14
     label_seg[np.all(label == Nhe, axis=-1)] = 15
-    label_seg[np.all(label == ch, axis=-1)] = 16
-    label_seg[np.all(label == thu, axis=-1)] = 17
-    label_seg[np.all(label == b, axis=-1)] = 18
-    label_seg[np.all(label == ri, axis=-1)] = 19
-    label_seg[np.all(label == y, axis=-1)] = 20
-    label_seg[np.all(label == shu, axis=-1)] = 21
-    label_seg[np.all(label == r, axis=-1)] = 22
-    label_seg[np.all(label == ki, axis=-1)] = 23
-    label_seg[np.all(label == kadhi, axis=-1)] = 24
-    label_seg[np.all(label == vi, axis=-1)] = 25
-    label_seg[np.all(label == g, axis=-1)] = 26
-    label_seg[np.all(label == thi, axis=-1)] = 27
-    label_seg[np.all(label == n, axis=-1)] = 28
-    label_seg[np.all(label == a, axis=-1)] = 29
-    label_seg[np.all(label == dhi, axis=-1)] = 30
+    # label_seg[np.all(label == ch, axis=-1)] = 16
+    # label_seg[np.all(label == thu, axis=-1)] = 17
+    label_seg[np.all(label == b, axis=-1)] = 16
+    label_seg[np.all(label == ri, axis=-1)] = 17
+    label_seg[np.all(label == y, axis=-1)] = 18
+    label_seg[np.all(label == shu, axis=-1)] = 19
+    label_seg[np.all(label == r, axis=-1)] = 20
+    label_seg[np.all(label == ki, axis=-1)] = 21
+    label_seg[np.all(label == kadhi, axis=-1)] = 22
+    # label_seg[np.all(label == vi, axis=-1)] = 25
+    label_seg[np.all(label == g, axis=-1)] = 23
+    # label_seg[np.all(label == thi, axis=-1)] = 27
+    label_seg[np.all(label == n, axis=-1)] = 24
+    label_seg[np.all(label == a, axis=-1)] = 25
+    # label_seg[np.all(label == dhi, axis=-1)] = 30
+    label_seg[np.all(label == m2, axis=-1)] = 26
 
     return label_seg
 
@@ -362,35 +367,37 @@ from keras.optimizers import Adam
 model.summary()
 epchs = 200
 
+checkpoint_filepath = "C:/Users\MuhammedHaleef\OneDrive\Documents\AI & DS/2nd Year\CM2603 DSGP\Final Project\Labelling Dataset\Model_training\models\checkpoints"
+
+lr =[0.00315, 0.0040, 0.0045]
+for each in lr:
+    class custom_saver(keras.callbacks.ModelCheckpoint):
+        def on_epoch_end(self, epoch, logs={}):
+            if 0 <= epoch < 350:
+                self.model.save("C:/Users\MuhammedHaleef\OneDrive\Documents\AI & DS/2nd Year\CM2603 DSGP\Final Project\Labelling Dataset\Model_training\modelsmodel_epoch{}.keras".format(epoch))
+    saver = custom_saver(filepath=checkpoint_filepath)
+    model.compile(optimizer=Adam(learning_rate=each), loss=total_loss, metrics=metrics)
 
 
 
-class custom_saver(keras.callbacks.ModelCheckpoint):
-    def on_epoch_end(self, epoch, logs={}):
-        if epoch>=70:
-            self.model.save("C:/archi/models/new/model_epoch{}.keras".format(epoch))
+# class custom_saver_1(keras.callbacks.ModelCheckpoint):
+#     def on_epoch_end(self, epoch, logs={}):
+#         if epoch>=70:
+#             self.model.save("C:/archi/models/without_rock/model_resnet_epoch{}.keras".format(epoch))
 
 
+# from keras.optimizers import Adam
+
+model.compile(optimizer=Adam(learning_rate=0.0040), loss=total_loss, metrics=metrics)
+history1 = model.fit(X_train, y_train,
+                     batch_size=16,
+                     verbose=1,
+                     epochs=200,
+                     validation_data=(X_test, y_test),
+                     shuffle=False,
+                     callbacks=[saver])
 
 
-class custom_saver_1(keras.callbacks.ModelCheckpoint):
-    def on_epoch_end(self, epoch, logs={}):
-        if epoch>=70:
-            self.model.save("C:/archi/models/without_rock/model_resnet_epoch{}.keras".format(epoch))
-
-
-from keras.optimizers import AdamW
-
-model.compile(optimizer=AdamW(), loss=total_loss, metrics=metrics)
-# history1 = model.fit(X_train, y_train,
-#                      batch_size=16,
-#                      verbose=1,
-#                      epochs=epochs,
-#                      validation_data=(X_test, y_test),
-#                      shuffle=False,
-#                      callbacks=[checkPoint])
-
-checkpoint_filepath = "C:/archi\models/new"
 
 checkPoint = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, save_best_only=False, monitor='val_loss', verbose=1,
                                              save_weights_only=False, mode='max', save_freq=1)
@@ -404,16 +411,15 @@ checkPoint = keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath, save_
 #
 # )
 saver = custom_saver(filepath=checkpoint_filepath)
-history1 = model.fit(generator,
-                     batch_size=16,
-                     verbose=1,
-                     epochs=100,
-                     steps_per_epoch=100,
-                     validation_steps=50,
-                     validation_data=valid_data_gen,
-                     shuffle=False,callbacks=[saver]
+# history1 = model.fit(generator,
+#                      batch_size=16,
+#                      verbose=1,
+#                      epochs=100,
+#                      steps_per_epoch=100,
+#                      validation_steps=50,
+#                      validation_data=valid_data_gen,
+#                      shuffle=False,callbacks=[saver])
 
-                     )
 # model.train_on_batch()
 # model.save(get_path(i))
 
@@ -436,27 +442,27 @@ import datetime
 ############################################################
 # TRY ANOTHE MODEL - WITH PRETRINED WEIGHTS
 # Resnet backbone
-BACKBONE = 'resnet34'
-preprocess_input = sm.get_preprocessing(BACKBONE)
-
-# preprocess input
-X_train_prepr = preprocess_input(X_train)
-X_test_prepr = preprocess_input(X_test)
-
-# define model
-model_resnet_backbone = sm.Unet(BACKBONE, encoder_weights='imagenet', classes=n_classes, activation='softmax')
-
-# compile keras model with defined optimozer, loss and metrics
-# model_resnet_backbone.compile(optimizer='adam', loss=focal_loss, metrics=metrics)
-model_resnet_backbone.compile(optimizer='adam', loss='categorical_crossentropy', metrics=metrics)
-
-saver_1 = custom_saver_1(filepath=checkpoint_filepath)
-history2 = model_resnet_backbone.fit(generator_1,steps_per_epoch=100,validation_steps=100,
-
-                                     batch_size=16,
-                                     epochs=100,
-                                     verbose=1,
-                                     validation_data=valid_data_gen_1,shuffle=False,callbacks=[saver_1])
+# BACKBONE = 'resnet34'
+# preprocess_input = sm.get_preprocessing(BACKBONE)
+#
+# # preprocess input
+# X_train_prepr = preprocess_input(X_train)
+# X_test_prepr = preprocess_input(X_test)
+#
+# # define model
+# model_resnet_backbone = sm.Unet(BACKBONE, encoder_weights='imagenet', classes=n_classes, activation='softmax')
+#
+# # compile keras model with defined optimozer, loss and metrics
+# # model_resnet_backbone.compile(optimizer='adam', loss=focal_loss, metrics=metrics)
+# model_resnet_backbone.compile(optimizer='adam', loss='categorical_crossentropy', metrics=metrics)
+#
+# saver_1 = custom_saver_1(filepath=checkpoint_filepath)
+# history2 = model_resnet_backbone.fit(generator_1,steps_per_epoch=100,validation_steps=100,
+#
+#                                      batch_size=16,
+#                                      epochs=100,
+#                                      verbose=1,
+#                                      validation_data=valid_data_gen_1,shuffle=False,callbacks=[saver_1])
 
 # print(model_resnet_backbone.summary())
 

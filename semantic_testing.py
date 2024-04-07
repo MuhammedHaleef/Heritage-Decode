@@ -1,21 +1,30 @@
 import cv2
 import numpy as np
+import tensorflow
+import keras
 
+from keras_applications import resnet50
+import segmentation_models as sm
+from keras.models import Sequential
+from PIL import Image
 from matplotlib import pyplot as plt
 from patchify import patchify, unpatchify
-from PIL import Image
-import segmentation_models as sm
-
 from sklearn.preprocessing import MinMaxScaler
+from collections import Counter
+from itertools import product
+
+
+
 scaler = MinMaxScaler()
 
 # from smooth_tiled_predictions import predict_img_with_smooth_windowing
-from semantic_model import jacard_coef
 
+
+def preprocessing():
+    pass
 
 
 def label_to_rgb(predicted_image):
-
     s = '#ff000f'.lstrip('#')
     s = np.array(tuple(int(s[i:i + 2], 16) for i in (0, 2, 4)))
 
@@ -144,28 +153,35 @@ def label_to_rgb(predicted_image):
     segmented_img[(predicted_image == 30)] = dhi
 
     segmented_img = segmented_img.astype(np.uint8)
-    return (segmented_img)
-img = cv2.imread("C:/archi/test/test_inscription_1.png", 1)
+    return segmented_img
+
+
+# changed the image file
+img = cv2.imread("C:/Users\MuhammedHaleef\OneDrive\Documents\AI & DS/2nd Year\CM2603 DSGP\Final Project\Labelling Dataset\Base Image/rs133.png", 1)
 
 BACKBONE = 'resnet34'
 preprocess_input = sm.get_preprocessing(BACKBONE)
-prepeocessed= preprocess_input(img)
+prepeocessed = preprocess_input(img)
+
+
 from keras.models import load_model
 
-model = load_model("C:/archi\models/resnet\model_resnet_epoch98.keras", compile=False)
+
+# changed the model location
+model = load_model("C:/Users\MuhammedHaleef\OneDrive\Documents\AI & DS/2nd Year\CM2603 DSGP\Final Project\Labelling Dataset\Model_training\modelsmodel_epoch199.keras", compile=False)
 patch_size = 128
 
 # Number of classes
 # n_classes = 31
-SIZE_X = (img.shape[1]//patch_size)*patch_size #Nearest size divisible by our patch size
-SIZE_Y = (img.shape[0]//patch_size)*patch_size #Nearest size divisible by our patch size
+SIZE_X = (img.shape[1]//patch_size)*patch_size      # Nearest size divisible by our patch size
+SIZE_Y = (img.shape[0]//patch_size)*patch_size      # Nearest size divisible by our patch size
 large_img = Image.fromarray(prepeocessed)
-large_img = large_img.crop((0 ,0, SIZE_X, SIZE_Y))  #Crop from top left corner
+large_img = large_img.crop((0, 0, SIZE_X, SIZE_Y))      # Crop from top left corner
 #image = image.resize((SIZE_X, SIZE_Y))  #Try not to resize for semantic segmentation
 large_img = np.array(large_img)
 
-patches_img = patchify(large_img, (patch_size, patch_size, 3), step=patch_size)  #Step=256 for 256 patches means no overlap
-patches_img = patches_img[:,:,0,:,:,:]
+patches_img = patchify(large_img, (patch_size, patch_size, 3), step=patch_size)  # Step=256 for 256 patches means no overlap
+patches_img = patches_img[:, :, 0, :, :, :]
 patched_prediction = []
 for i in range(patches_img.shape[0]):
     for j in range(patches_img.shape[1]):
@@ -186,24 +202,287 @@ patched_prediction = np.array(patched_prediction)
 patched_prediction = np.reshape(patched_prediction, [patches_img.shape[0], patches_img.shape[1],
                                                      patches_img.shape[2], patches_img.shape[3]])
 
-unpatched_prediction = unpatchify(patched_prediction, (large_img.shape[0], large_img.shape[1]))#this is the final prediction with labels as the pixels
+unpatched_prediction = unpatchify(patched_prediction, (large_img.shape[0], large_img.shape[1]))     # this is the final prediction with labels as the pixels
 
-unique = np.unique(unpatched_prediction)#final prediction
-unique_num=[]
+# Getting the characters from prediction image
+
+
+unique = np.unique(unpatched_prediction)        # final prediction
+unique_num = []
 for each in unique:
     width = len(unpatched_prediction[0])
-    height =len(unpatched_prediction)
-    count=0
-    for i in range(0,height):
-        for j in range(0,width):
-            if unpatched_prediction[i][j]==each:
-                count+=1
+    height = len(unpatched_prediction)
+    count = 0
+    for i in range(0, height):
+        for j in range(0, width):
+            if unpatched_prediction[i][j] == each:
+                count += 1
     unique_num.append(count)
 
-for i in range(0,len(unique)):
+for i in range(0, len(unique)):
     print(str(unique[i])+" : "+str(unique_num[i]))
 # print(unique)
-rgb = label_to_rgb(unpatched_prediction)
-plt.imshow(rgb)
+
+def label_to_bw(predicted_image):
+    # Define colors
+    rock_color = np.array([59, 65, 57])  # RGB for rock color, assuming it's the color of the 'rock' label
+    black = np.array([0, 0, 0])  # Black color
+    white = np.array([255, 255, 255])  # White color
+
+    # Initialize segmented image
+    segmented_img = np.empty((predicted_image.shape[0], predicted_image.shape[1], 3))
+
+    # Map colors based on labels
+    segmented_img[(predicted_image == 0)] = black  # Assuming 0 represents the 'rock' label
+    segmented_img[(predicted_image != 0)] = white  # All other labels set to white
+
+    segmented_img = segmented_img.astype(np.uint8)
+    return segmented_img
+
+def remove_noise(image):
+    # Define kernel for morphological operations
+    kernel = np.ones((3,3),np.uint8)
+
+    # Erosion followed by dilation to remove small noise
+    cleaned_image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+    # cleaned_image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+    return cleaned_image
+
+
+def get_predicted_text():
+    label_to_char = {0: 'rock', 1: 's', 2: 'sh', 3: 'p', 4: 'ru2', 5: 'ru', 6: 'm', 7: 'k', 8: 'li', 9: 'dh', 10: 'pu', 11: 'th',
+                     12: 'u', 13: 'h', 14: 'le', 15: 'Nhe', 16: 'ch', 17: 'thu', 18: 'b', 19: 'ri', 20: 'y', 21: 'shu', 22: 'r', 23: 'ki',
+                     24: 'kadhi', 25: 'vi', 26: 'g', 27: 'thi', 28: 'n', 29: 'a', 30: 'dhi'}
+
+    def get_char_from_label(label):
+        # Assuming label_to_char dictionary is defined
+        return label_to_char.get(label)
+
+    most_repeated_labels = []
+    # Get the number of columns in the 'unpatched_prediction' array
+    num_columns = unpatched_prediction.shape[1]
+
+    # Iterate through each column
+    for col_idx in range(num_columns):
+        # Get the current column
+        column = unpatched_prediction[:, col_idx]
+
+        # Count the occurrences of each unique class label in the column
+        unique_labels, label_counts = np.unique(column, return_counts=True)
+
+        # Sort the unique labels by their counts in descending order
+        sorted_labels_by_count = unique_labels[np.argsort(-label_counts)]
+
+        # Get the most repeated class label for the column
+        most_repeated_label = sorted_labels_by_count[0]
+
+        # If the most repeated label is 0, choose the second most repeated label
+        if most_repeated_label == 0:
+            # If there's only one unique label, set most_repeated_label to that label
+            if len(sorted_labels_by_count) == 1:
+                most_repeated_label = sorted_labels_by_count[0]
+            else:
+                most_repeated_label = sorted_labels_by_count[1]
+
+        # Append the most repeated label to the list
+        most_repeated_labels.append(most_repeated_label)
+
+    # Convert the list to a NumPy array
+    most_repeated_labels_array = np.array(most_repeated_labels)
+
+    # print("Most repeated class labels for each column:", most_repeated_labels_array)
+
+    # most_repeated_labels = [0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 24, 24, 24, 24, 24, 24, 24, 24, 22, 22, 22, 6, 22, 22, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 0, 0, 0, 0, 19, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 24, 24, 24, 24, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 8, 8, 8, 8, 8, 8, 6, 6, 6, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 29, 29, 29, 29, 29, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7]
+    # most_repeated_labels_array = np.array(most_repeated_labels)
+    # Initialize an empty list to store new arrays without consecutive zeros
+    new_arrays = []
+
+    # Find indices where consecutive zeros occur
+    zero_indices = np.where(np.diff(np.concatenate(([0], most_repeated_labels_array == 0, [0]))))[0]
+
+    temp_zero_indices = [0]
+    for zero_index in zero_indices:
+        temp_zero_indices.append(zero_index)
+    temp_zero_indices.append(len(most_repeated_labels))
+    zero_indices = temp_zero_indices
+    # Iterate through the zero indices and split the array accordingly
+    for start, end in zip(zero_indices[:-1:2], zero_indices[1::2]):
+        new_array = most_repeated_labels_array[start:end]
+        if len(new_array) > 0:
+            new_arrays.append(new_array)
+
+    selected_values = []
+
+    # Step 1: Loop through each sliced array
+    for arr in new_arrays:
+        if len(arr) > 20:
+            # Step 2: Count the occurrences of each value in the sliced array
+            value_counts = Counter(arr)
+            temp_arr = []
+            temp_arr.extend([value for value, count in value_counts.items() if count > 20])
+            if len(temp_arr) > 0:
+                selected_values.append(temp_arr)
+
+    def convert_indices_to_chars(input_list):
+        # Initialize an empty list to store the converted characters
+        output_list = []
+
+        # Iterate through each sublist in the input list
+        for sublist in input_list:
+            # Map each index in the sublist to its corresponding character
+            chars = [label_to_char.get(index) for index in sublist]
+            if chars == 'ru2':
+                chars = 'ru'
+            if chars == 'm2':
+                chars = 'm'
+            # Append the list of characters to the output list
+            output_list.append(chars)
+
+        return output_list
+
+    # Convert indices to characters
+    output_list = convert_indices_to_chars(selected_values)
+
+    # Use itertools.product() to generate all combinations
+    combinations = list(product(*output_list))
+
+    # Print the combinations
+    # for combination in combinations:
+    #     print(combination)
+
+    return combinations
+
+
+rgb = label_to_bw(unpatched_prediction)
+plt.imshow(remove_noise(rgb))
 plt.axis('off')
 plt.show()
+
+print(get_predicted_text())
+
+# def split_segments(segmented_img):
+#     # Convert the segmented image to grayscale
+#     # gray_img = cv2.cvtColor(segmented_img, cv2.COLOR_BGR2GRAY)
+#
+#     # Find contours of black regions
+#     contours, _ = cv2.findContours(segmented_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+#
+#     # Initialize list to store segmented parts
+#     segmented_parts = []
+#
+#     for contour in contours:
+#         # Get bounding box of each contour
+#         x, y, w, h = cv2.boundingRect(contour)
+#
+#         # Extract segmented part from original segmented image
+#         segmented_part = segmented_img[y:y+h, x:x+w]
+#
+#         # Append to list of segmented parts
+#         segmented_parts.append(segmented_part)
+#
+#     return segmented_parts
+
+
+# Assuming segmented_img contains the segmented image with black and white regions
+# segmented_parts = split_segments(rgb)
+
+# Display each segmented part
+# for i, part in enumerate(segmented_parts):
+#     cv2.imshow('Segmented Part {}'.format(i+1), part)
+#     cv2.waitKey(0)
+#     cv2.destroyAllWindows()
+
+# import numpy as np
+#
+# # Assuming 'unpatched_prediction' contains the predicted labels
+#
+# # Initialize an empty list to store the most repeated class label for each column
+# most_repeated_labels = []
+#
+# # Get the number of columns in the 'unpatched_prediction' array
+# num_columns = unpatched_prediction.shape[1]
+#
+# # Iterate through each column
+# for col_idx in range(num_columns):
+#     # Get the current column
+#     column = unpatched_prediction[:, col_idx]
+#
+#     # Count the occurrences of each unique class label in the column
+#     unique_labels, label_counts = np.unique(column, return_counts=True)
+#
+#     # Sort the unique labels by their counts in descending order
+#     sorted_labels_by_count = unique_labels[np.argsort(-label_counts)]
+#
+#     # Get the most repeated class label for the column
+#     most_repeated_label = sorted_labels_by_count[0]
+#
+#     # If the most repeated label is 0, choose the second most repeated label
+#     if most_repeated_label == 0:
+#         # If there's only one unique label, set most_repeated_label to that label
+#         if len(sorted_labels_by_count) == 1:
+#             most_repeated_label = sorted_labels_by_count[0]
+#         else:
+#             most_repeated_label = sorted_labels_by_count[1]
+#
+#     # Append the most repeated label to the list
+#     most_repeated_labels.append(most_repeated_label)
+#
+# # Convert the list to a NumPy array
+# most_repeated_labels_array = np.array(most_repeated_labels)
+#
+# print("Most repeated class labels for each column:", most_repeated_labels_array)
+#
+# # Example array containing most repeated class labels for each column
+# # most_repeated_labels_array = np.array([1, 2, 0, 0, 1, 0, 0, 2, 0, 0, 0, 0, 1, 1, 0, 0, 2, 0, 0, 0, 0, 0])
+#
+# # Initialize an empty list to store new arrays without consecutive zeros
+# new_arrays = []
+#
+# # Find indices where consecutive zeros occur
+# zero_indices = np.where(np.diff(np.concatenate(([0], most_repeated_labels_array == 0, [0]))))[0]
+#
+# temp_zero_indices = [0]
+# for zero_index in zero_indices:
+#     temp_zero_indices.append(zero_index)
+# temp_zero_indices.append(len(zero_indices))
+# zero_indices = temp_zero_indices
+# # Iterate through the zero indices and split the array accordingly
+# for start, end in zip(zero_indices[:-1:2], zero_indices[1::2]):
+#     new_array = most_repeated_labels_array[start:end]
+#     if len(new_array) > 0:
+#         new_arrays.append(new_array)
+#
+# # # If the last group ends with zeros, add the remaining portion to new_arrays
+# # if zero_indices[-1] == len(most_repeated_labels_array) - 1 and most_repeated_labels_array[-1] == 0:
+# #     new_array = most_repeated_labels_array[zero_indices[-2] + 1:]
+# #     if len(new_array) > 0:
+# #         new_arrays.append(new_array)
+#
+# # Print the new arrays without consecutive zeros
+# for idx, arr in enumerate(new_arrays):
+#     print(f"Array {idx + 1}:", arr)
+#
+# from collections import Counter
+#
+# # Assuming new_arrays contains the new sliced arrays without consecutive zeros
+#
+# # Initialize an empty list to store the most repeated values in each sliced array
+# most_repeated_values = []
+#
+# # Iterate through each sliced array
+# for arr in new_arrays:
+#     # Count the occurrences of each value in the sliced array
+#     value_counts = Counter(arr)
+#
+#     # Find the most repeated value (excluding zeros)
+#     most_repeated_value = max(value_counts, key=value_counts.get)
+#
+#     # Append the most repeated value to the list
+#     most_repeated_values.append(most_repeated_value)
+#
+# # Find values repeated more than 5 times in the most repeated values list
+# selected_values = [value for value, count in Counter(most_repeated_values).items() if count > 5]
+#
+# print("Selected values repeated more than 5 times:", selected_values)
+
+
