@@ -34,7 +34,7 @@ class _MyHomePageState extends State<MyHomePage> {
             Opacity(
               opacity: 1,
               child: Image.asset(
-                'assets/3.png', // Replace with your background image path
+                'assets/3.png', 
                 fit: BoxFit.cover,
               ),
             ),

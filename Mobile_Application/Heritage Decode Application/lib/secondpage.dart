@@ -14,13 +14,16 @@ class SecondPage extends StatefulWidget {
 
 class _SecondPageState extends State<SecondPage> {
   File? _selectedImage;
+  bool _isTranslating = false;  // Added state variable
 
+  // take image from camera
   Future<void> _getImageFromCamera() async {
     final XFile? image =
         await ImagePicker().pickImage(source: ImageSource.camera);
     _handleImageSelection(image);
   }
 
+  // select image from gallery
   Future<void> _getImageFromGallery() async {
     final XFile? image =
         await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -70,8 +73,8 @@ class _SecondPageState extends State<SecondPage> {
                   const SizedBox(height: 20),
                   // Display selected or default image
                   Container(
-                    width: 350,  // Increased width
-                    height: 300, // Increased height
+                    width: 350,
+                    height: 300,
                     decoration: BoxDecoration(
                       border: Border.all(
                           color: Colors.white,
@@ -81,17 +84,17 @@ class _SecondPageState extends State<SecondPage> {
                     ),
                     child: _selectedImage != null
                         ? Image.file(
-                            _selectedImage!,
-                            width: 250, // Increased width
-                            height: 250, // Increased height
-                            fit: BoxFit.cover,
-                          )
+                      _selectedImage!,
+                      width: 250,
+                      height: 250,
+                      fit: BoxFit.cover,
+                    )
                         : Image.asset(
-                            'assets/addimage.png',
-                            width: 250,
-                            height: 250,
-                            fit: BoxFit.cover,
-                          ),
+                      'assets/addimage.png',
+                      width: 250,
+                      height: 250,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   // Buttons for capturing and selecting images
@@ -116,60 +119,76 @@ class _SecondPageState extends State<SecondPage> {
                   const SizedBox(height: 40),
                   // Button for prediction
                   ElevatedButton(
-  onPressed: () async {
-    if (_selectedImage != null) {
-      var request = http.MultipartRequest(
-          'POST',
-          Uri.parse(
-              'http://192.168.1.101:5000/upload_and_predict'));
-              
+                    onPressed: () async {
+                      if (_selectedImage != null) {
+                        setState(() {
+                          _isTranslating = true;  // Set to true when translating starts
+                        });
 
-      request.files.add(await http.MultipartFile.fromPath(
-          'image', _selectedImage!.path));
-      
-      try {
-        var response = await request.send();
-        
-        if (response.statusCode == 200) {
-          var responseBody = await response.stream.bytesToString();
-          var result = jsonDecode(responseBody);
-          var predictedClass = result['predicted_class'];
-          print('Predicted Class: $predictedClass');
-          
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ThirdPage(
-                selectedImage: _selectedImage!,
-                predictedClass: predictedClass,
-              ),
-            ),
-          );
+                        var request = http.MultipartRequest(
+                            'POST',
+                            Uri.parse(
+                                'http://192.168.43.76:5000/upload_and_predict'));
 
-        } else {
-          // Handle other status codes
-          print('Error sending image: ${response.statusCode}');
-        }
-      } catch (e) {
-        print('Error sending image: $e');
-      }
-      
-    } else {
-      // Handle case when no image is selected
-      print('No image selected');
-    }
-  },
-  style: ElevatedButton.styleFrom(
-    foregroundColor: Colors.white,
-    backgroundColor: Colors.blue,
-    padding: const EdgeInsets.all(15),
-  ),
-  child: const Text(
-    'Translate',
-    style: TextStyle(fontSize: 18),
-  ),
-),
+                        request.files.add(await http.MultipartFile.fromPath(
+                            'image', _selectedImage!.path));
 
+                        try {
+                          var response = await request.send();
+
+                          if (response.statusCode == 200) {
+                            var responseBody = await response.stream.bytesToString();
+                            var result = jsonDecode(responseBody);
+                            var predictedClass = result['predicted_class'];
+                            print('Predicted Class: $predictedClass');
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ThirdPage(
+                                  selectedImage: _selectedImage!,
+                                  predictedClass: predictedClass,
+                                ),
+                              ),
+                            ).then((_) {  // Set to false when navigation is complete
+                              setState(() {
+                                _isTranslating = false;
+                              });
+                            });
+
+                          } else {
+                            // Handle other status codes
+                            print('Error sending image: ${response.statusCode}');
+                            setState(() {
+                              _isTranslating = false;
+                            });
+                          }
+                        } catch (e) {
+                          print('Error sending image: $e');
+                          setState(() {
+                            _isTranslating = false;
+                          });
+                        }
+
+                      } else {
+                        // Handle case when no image is selected
+                        print('No image selected');
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.all(15),
+                    ),
+                    child: _isTranslating  // Check if translating
+                        ? CircularProgressIndicator(  // Display loading indicator
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    )
+                        : const Text(
+                      'Translate',
+                      style: TextStyle(fontSize: 18),
+                    ),
+                  ),
                 ],
               ),
             ),

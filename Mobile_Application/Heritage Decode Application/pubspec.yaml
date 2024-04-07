@@ -31,19 +31,20 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.2
-  image_picker: ^0.8.3
-  http: ^0.13.3
-  flutter_launcher_icons: ^0.9.2  
-
-flutter_icons:
-  android: "launcher_icon"
-  ios: true
-  image_path: "assets/icon/Logo.png"
+  image_picker: ^0.8.4+3
+  http: 0.13.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.9.2
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/3.png"
+
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -57,12 +58,9 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/cover.jpeg
-    - assets/fruits.jpg
+
     - assets/camera.png
-    - assets/default.png
     - assets/background.jpg
-    - assets/fruit_b1.jpg
     - assets/3.png
     - assets/addimage.png
 

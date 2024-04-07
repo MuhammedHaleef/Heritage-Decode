@@ -14,10 +14,10 @@ class ThirdPage extends StatelessWidget {
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage("assets/background.jpg"), // Replace with your image path
+            image: AssetImage("assets/background.jpg"),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.7), // Adjust opacity here
+              Colors.black.withOpacity(0.7), //Opacity 
               BlendMode.dstATop,
             ),
           ),
