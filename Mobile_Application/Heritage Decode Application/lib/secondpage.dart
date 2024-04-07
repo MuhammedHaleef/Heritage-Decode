@@ -171,8 +171,13 @@ class _SecondPageState extends State<SecondPage> {
                         }
 
                       } else {
-                        // Handle case when no image is selected
-                        print('No image selected');
+                        // Show snackbar if no image is selected
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Please select an image'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
                       }
                     },
                     style: ElevatedButton.styleFrom(
